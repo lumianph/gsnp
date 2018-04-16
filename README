@@ -1,0 +1,60 @@
+NOTE: This is a piece of work that I did during my PhD study in 2012. The code uploaded here is mainly for backup purpose only. You may leave any comments if you are interested.
+
+
+===================================================================================
+
+1. INTRODUCTION
+
+We have developed GSNP, a software package with GPU acceleration, for single-nucleotide polymorphism detection on DNA sequences generated from second-generation sequencing equipment. Compared with SOAPsnp, a popular, high-performance CPU-based SNP detection tool, GSNP has several distinguishing features: First, we design a sparse data representation format to reduce memory access as well as branch divergence. Second, we develop a multipass sorting network to efficiently sort a large number of small arrays on the GPU. Third, wecompute a table of frequently used scores once to avoid repeated, expensive computation and to reduce random memory access. Fourth, we apply customized compression schemes to the output data to improve the I/O performance. As a result, on a server equipped with an Intel Xeon E5630 2.53 GHZ CPU and an NVIDIA Tesla M2050 GPU, it took GSNP about two hours to analyze a whole human genome dataset whereas SOAPsnp took three days for the same task on the same machine.
+
+2. INSTALL
+
+You need CUDA SDK 4.0 to run this program. The default device used is the first device (device_id = 0). You may change the device in the common.h file.
+
+
+(1). You may need to modify variables in Makefile according to your system, including the install directories of CUDA SDK and your GPU architecture, e.g., the compute capability.
+(2). Type "make all" and wait a while. If it is successful, there are two binary files generated: gsnp and decompression.
+
+3. QUICK START
+
+GSNP implements almost the same interfaces and functionalities as SOAPsnp (http://soap.genomics.org.cn/soapsnp.html), but with the GPU acceleration for high performance. There are two executable files (GSNP and decompression). "GSNP" is the program performing SNP detection. "decompression" is an demonstration to extract data from the compressed output. It also can be used to decompress results, which will generate the exact same results as SOAPsnp. 
+
+(1). GSNP: By default, GSNP outputs the cns format as SOAPsnp. If you want to adopt the compression, please add the parameter '-C'. You can use the same input arguments as SOAPsnp to execute GSNP (except several unsupported parameters listed below). If you adopt the compression, the result is stored in several output files, whose file names have the prefix as specified. 
+(2). decompression: If you want to get the same output format (the text format) as SOAPsnp, you can use this tool to extract the compressed results. The first parameter is the output file prefix specified when running GSNP, and the second parameter is the output file. Moreover, you also can follow the sample source code in decompression.cpp to write in-memory decompression without additional I/O for your data query tasks.
+
+4. KNOWN ISSUES
+
+The following parameters in SOAPsnp currently are not supported, which will be fixed in the next version.
+-T <FILE> Only call consensus on regions specified in a file.
+-q Only output potential SNPs.
+
+The following parameters in SOAPsnp are useless in GSNP, and also will not be supported in the future.
+-F <int> Output format. 0: Text; 1: GLFv2; 2: GPFv2.[0]
+-E <String> Extra headers EXCEPT CHROMOSOME FIELD specified in GLFv2 output.
+
+GSNP generates several intermediate files while running to avoid repeated I/O read. If the program is finished successfully, these files are removed. Otherwise, please run clean.sh to delete these temporary files.
+
+4. RESULT COMPRESSION
+
+GSNP adopts customized GPU-accelrated compression techniques to address the I/O. Such techniques provide a better compression ratio as well as higher compression/decompression speed than general data compression tools, such as gzip. Users have two options to handle such compressed results.
+(1). Compressed result can be extracted chunk by chunk in-memory. /cpp/decompression.cpp demonstrates that how to use the decompression APIs to read compressed data directly.
+(2). The binary file "decompression" can be used to decompress the result. The generated results are stored in the exactly same format as SOAPsnp's text output.
+
+5. SOFTWARE LICENCE
+
+The license is a free non-exclusive, non-transferable license to reproduce, use, modify and display the source code version of the Software, with or without modifications solely for non-commercial research, educational or evaluation purposes. The license does not entitle Licensee to technical support, telephone assistance, enhancements or updates to the Software. All rights, title to and ownership interest in Software, including all intellectual property rights therein shall remain in HKUST.
+
+
+6. DEVERLOPERS
+
+If you have any problems or suggestions about the software, please feel free to contact the authors
+Mian Lu (Hong Kong University of Science and Technology, lumian@cse.ust.hk), or Jiuxin Zhao (Hong Kong University of Science and Technology, zhaojx@cse.ust.hk)
+
+If you have any problems about the functionalities and related biology background, please contact the following author
+Bingqiang Wang (Beijing Genomics Institute, Shenzhen, wangbingqiang@genomics.org.cn)
+
+7. REFERENCE
+
+Mian Lu, Jiuxin Zhao, Qiong Luo, Bingqiang Wang, Shaohua Fu, and Zhe Lin. GSNP: A DNA Single-Nucleotide Polymorphism Detection Syste with GPU Acceleration. The 40th Annual International Conference on Parallel Processing (ICPP-2011), September 2011.
+
+Ruiqiang Li, Yingrui Li, Xiaodong Fang, Huanming Yang, Jian Wang, Karsten Kristiansen, and Jun Wang. SNP detection for massively parallel whole-genome resequencing. Genome Research, Vol. 19, No. 6. (1 June 2009), pp. 1124-1132.
